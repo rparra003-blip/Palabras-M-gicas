@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Palabras Mágicas - Aprende jugando</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .game {
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1rem 0.8rem;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1a202c;
+    }
+    .header-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .score-pill, .reset-btn {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #2d3748;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .reset-btn:hover { background: #fee2e2; border-color: #fecaca; }
+    .sound-btn {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 30px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .sound-btn:hover { background: #f8fafc; }
+
+    /* Progress */
+    .progress-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #10b981;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    /* Image card */
+    .image-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 1.2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .word-emoji {
+      font-size: 5rem;
+      line-height: 1;
+      transition: transform 0.2s ease, filter 0.2s;
+      display: inline-block;
+    }
+    .word-emoji.celebrate {
+      transform: scale(1.2);
+      filter: drop-shadow(0 0 8px gold);
+    }
+    .hint-text {
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    /* Word area */
+    .word-area {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 1rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      transition: box-shadow 0.2s;
+    }
+    .word-area.win-glow {
+      box-shadow: 0 0 0 3px #10b981, 0 0 0 6px rgba(16,185,129,0.3);
+    }
+    .word-slots {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .letter-slot {
+      width: 48px;
+      height: 56px;
+      border-radius: 12px;
+      border: 2px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: white;
+      transition: all 0.2s;
+    }
+    .letter-slot.blank {
+      border-style: dashed;
+      border-color: #94a3b8;
+      background: #f8fafc;
+      color: #94a3b8;
+    }
+    .letter-slot.filled {
+      border-color: #10b981;
+      background: #ecfdf5;
+      color: #065f46;
+    }
+    .letter-slot.reveal-wrong {
+      border-color: #ef4444;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .shake { animation: shake 0.3s ease; }
+
+    /* Hearts */
+    .errors-area {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+    .heart {
+      font-size: 1.5rem;
+      transition: all 0.2s;
+    }
+    .heart.lost {
+      opacity: 0.2;
+      filter: grayscale(1);
+    }
+
+    /* Feedback */
+    .feedback {
+      font-size: 0.9rem;
+      color: #64748b;
+      min-height: 44px;
+      text-align: center;
+      margin-bottom: 0.8rem;
+      font-weight: 500;
+    }
+    .feedback.correct { color: #059669; }
+    .feedback.wrong { color: #dc2626; }
+    .feedback.win { color: #059669; font-weight: 700; font-size: 1rem; }
+
+    /* Letters grid */
+    .letters-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .letter-btn {
+      width: 64px;
+      height: 64px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #1a202c;
+      transition: all 0.1s;
+      touch-action: manipulation;
+    }
+    .letter-btn:active { transform: scale(0.94); }
+    .letter-btn.used-correct {
+      background: #ecfdf5;
+      border-color: #10b981;
+      color: #065f46;
+      pointer-events: none;
+    }
+    .letter-btn.used-wrong {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+      color: #cbd5e1;
+      pointer-events: none;
+      text-decoration: line-through;
+    }
+    .letter-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* Buttons */
+    .next-btn, .retry-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 40px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s;
+      margin-top: 8px;
+    }
+    .next-btn {
+      background: #10b981;
+      color: white;
+      display: none;
+    }
+    .next-btn:hover { background: #059669; }
+    .retry-btn {
+      background: #f97316;
+      color: white;
+      display: none;
+    }
+    .retry-btn:hover { background: #ea580c; }
+    .next-btn:active, .retry-btn:active { transform: scale(0.98); }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .button-group .next-btn, .button-group .retry-btn {
+      width: 50%;
+      display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .letter-btn { width: 56px; height: 56px; font-size: 1.4rem; }
+      .letter-slot { width: 42px; height: 50px; font-size: 1.2rem; }
+      .word-emoji { font-size: 3.8rem; }
+      .heart { font-size: 1.3rem; }
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f172a; }
+      .title { color: #f1f5f9; }
+      .score-pill, .sound-btn, .reset-btn { background: #1e293b; border-color: #334155; color: #cbd5e1; }
+      .progress-bar { background: #1e293b; }
+      .image-card, .word-area { background: #1e293b; border-color: #334155; }
+      .hint-text { color: #94a3b8; }
+      .letter-slot { border-color: #475569; background: #0f172a; color: #f1f5f9; }
+      .letter-slot.blank { background: #0f172a; border-color: #475569; color: #64748b; }
+      .letter-slot.filled { background: #064e3b; border-color: #10b981; color: #86efac; }
+      .letter-slot.reveal-wrong { background: #450a0a; border-color: #ef4444; color: #fca5a5; }
+      .feedback { color: #94a3b8; }
+      .feedback.correct { color: #34d399; }
+      .feedback.wrong { color: #f87171; }
+      .feedback.win { color: #34d399; }
+      .letter-btn { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+      .letter-btn.used-correct { background: #064e3b; border-color: #10b981; color: #86efac; }
+      .letter-btn.used-wrong { background: #1e293b; border-color: #1e293b; color: #475569; }
+      .reset-btn:hover { background: #7f1a1a; border-color: #991b1b; }
+    }
+  </style>
+</head>
+<body>
+<canvas id="confettiCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000;"></canvas>
+
+<div class="game">
+  <div class="header">
+    <span class="title">📚 Palabras mágicas</span>
+    <div class="header-right">
+      <button class="sound-btn" id="soundBtn">🔊 Sonido</button>
+      <button class="reset-btn" id="resetBtn">🔄 Reiniciar</button>
+      <span class="score-pill" id="scoreDisplay">0 aciertos</span>
+    </div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <div class="image-card">
+    <div class="word-emoji" id="wordEmoji">❓</div>
+    <div class="hint-text" id="hintText"></div>
+  </div>
+
+  <div class="word-area" id="wordArea">
+    <div class="word-slots" id="wordSlots"></div>
+  </div>
+
+  <div class="errors-area" id="errorsArea"></div>
+  <div class="feedback" id="feedbackMsg"></div>
+  <div class="letters-grid" id="lettersGrid"></div>
+  
+  <div class="button-group" id="buttonGroup">
+    <button class="next-btn" id="nextBtn">Siguiente palabra →</button>
+    <button class="retry-btn" id="retryBtn">🔄 Reintentar palabra</button>
+  </div>
+</div>
+
+<script>
+  // ==================== BASE DE PALABRAS ====================
+  const PALABRAS = [
+    { emoji: "🐶", palabra: "PERRO",    pista: "Animal que ladra" },
+    { emoji: "🐱", palabra: "GATO",     pista: "Animal que maúlla" },
+    { emoji: "🐄", palabra: "VACA",     pista: "Da leche y va al campo" },
+    { emoji: "🐘", palabra: "ELEFANTE", pista: "Tiene trompa muy larga" },
+    { emoji: "🦒", palabra: "JIRAFA",   pista: "Tiene el cuello muy largo" },
+    { emoji: "🐧", palabra: "PINGUINO", pista: "Ave que no vuela" },
+    { emoji: "🐟", palabra: "PECES",    pista: "Viven en el agua" },
+    { emoji: "🍎", palabra: "MANZANA",  pista: "Fruta roja o verde" },
+    { emoji: "🦋", palabra: "MARIPOSA", pista: "Insecto con alas de colores" },
+    { emoji: "🚗", palabra: "AUTO",     pista: "Tiene cuatro ruedas" },
+    { emoji: "🌧️", palabra: "LLUVIA",   pista: "Agua que cae del cielo" },
+    { emoji: "⭐", palabra: "ESTRELLA", pista: "Brilla en el cielo de noche" },
+    { emoji: "🦆", palabra: "PATITO",   pista: "Ave amarilla que nada" },
+    { emoji: "☀️", palabra: "SOL",      pista: "Da luz y calor" },
+    { emoji: "🦁", palabra: "LEON",     pista: "Rey de la selva" },
+    { emoji: "🌈", palabra: "ARCOIRIS", pista: "Aparece después de la lluvia" },
+    { emoji: "🐸", palabra: "RANA",     pista: "Salta y vive en el agua" },
+    { emoji: "🚂", palabra: "TREN",     pista: "Va por rieles" },
+    { emoji: "🏠", palabra: "CASA",     pista: "Lugar donde vivimos" },
+    { emoji: "🌺", palabra: "FLOR",     pista: "Planta con pétalos de colores" }
+  ];
+
+  const MAX_ERRORES = 4;
+  const LETRAS_EXTRA = 4;
+
+  // Estado global
+  let estado = {
+    indice: 0,
+    orden: [],
+    palabraActual: null,
+    slotsBlancos: [],      // índices de las letras que faltan
+    progreso: [],          // letras colocadas en cada posición (null si vacío)
+    errores: 0,
+    terminado: false,
+    aciertos: 0,
+    letrasVisibles: [],
+    sonido: true,
+    audioCtx: null,        // contexto de audio reutilizable
+    audioGain: null
+  };
+
+  // ==================== UTILIDADES ====================
+  function mezclar(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function elegirLetrasFaltantes(palabra) {
+    let n = palabra.length <= 3 ? 1 : palabra.length <= 5 ? 2 : palabra.length <= 7 ? 3 : 4;
+    n = Math.min(n, palabra.length - 1);
+    const indices = Array.from({ length: palabra.length }, (_, i) => i);
+    return mezclar(indices).slice(0, n);
+  }
+
+  function generarLetrasVisibles(palabra, faltantes) {
+    const correctas = faltantes.map(i => palabra[i]);
+    const abecedario = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !correctas.includes(l));
+    const extras = mezclar(abecedario).slice(0, LETRAS_EXTRA);
+    return mezclar([...correctas, ...extras]);
+  }
+
+  // ==================== AUDIO OPTIMIZADO ====================
+  function initAudio() {
+    if (!estado.audioCtx) {
+      try {
+        estado.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        estado.audioGain = estado.audioCtx.createGain();
+        estado.audioGain.gain.value = 0.15;
+        estado.audioGain.connect(estado.audioCtx.destination);
+      } catch(e) { console.warn("Web Audio no soportado"); }
+    }
+    if (estado.audioCtx && estado.audioCtx.state === 'suspended') {
+      estado.audioCtx.resume();
+    }
+  }
+
+  function playSound(tipo) {
+    if (!estado.sonido || !estado.audioCtx) return;
+    initAudio();
+    if (!estado.audioCtx) return;
+    const ctx = estado.audioCtx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(estado.audioGain);
+    
+    if (tipo === 'correcto') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.setValueAtTime(659.25, now + 0.1);
+      osc.frequency.setValueAtTime(783.99, now + 0.2);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      osc.start(); osc.stop(now + 0.45);
+    } else if (tipo === 'ganaste') {
+      const notas = [523.25, 659.25, 783.99, 1046.50];
+      notas.forEach((freq, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = freq;
+        o.connect(g);
+        g.connect(estado.audioGain);
+        g.gain.setValueAtTime(0.12, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.4);
+        o.start(now + i * 0.12);
+        o.stop(now + i * 0.12 + 0.4);
+      });
+    } else if (tipo === 'error') {
+      osc.type = 'triangle';
+      osc.frequency.value = 220;
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc.start(); osc.stop(now + 0.3);
+    }
+  }
+
+  // ==================== CELEBRACIÓN VISUAL ====================
+  function celebrarVictoria() {
+    const emojiEl = document.getElementById('wordEmoji');
+    const wordArea = document.getElementById('wordArea');
+    emojiEl.classList.add('celebrate');
+    wordArea.classList.add('win-glow');
+    setTimeout(() => {
+      emojiEl.classList.remove('celebrate');
+      wordArea.classList.remove('win-glow');
+    }, 600);
+  }
+
+  // ==================== CONFETTI ====================
+  function lanzarConfetti() {
+    const canvas = document.getElementById('confettiCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const colores = ['#10b981','#6366f1','#f59e0b','#ef4444','#3b82f6','#ec4899'];
+    const piezas = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -20,
+      vx: (Math.random() - 0.5) * 5,
+      vy: Math.random() * 4 + 2,
+      w: Math.random() * 10 + 6,
+      h: Math.random() * 16 + 8,
+      rot: Math.random() * 360,
+      vrot: (Math.random() - 0.5) * 12,
+      color: colores[Math.floor(Math.random() * colores.length)]
+    }));
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      piezas.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vrot;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      });
+      frame++;
+      if (frame < 150) requestAnimationFrame(draw);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    draw();
+  }
+
+  // ==================== RENDERIZADO ====================
+  function renderizarCorazones() {
+    const area = document.getElementById('errorsArea');
+    area.innerHTML = '';
+    for (let i = 0; i < MAX_ERRORES; i++) {
+      const h = document.createElement('span');
+      h.className = 'heart' + (i < estado.errores ? ' lost' : '');
+      h.textContent = i < estado.errores ? '🩶' : '❤️';
+      area.appendChild(h);
+    }
+  }
+
+  function renderizarSlots() {
+    const cont = document.getElementById('wordSlots');
+    cont.innerHTML = '';
+    const pal = estado.palabraActual.palabra;
+    pal.split('').forEach((letra, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'letter-slot';
+      if (estado.slotsBlancos.includes(i)) {
+        if (estado.progreso[i]) {
+          slot.textContent = estado.progreso[i];
+          slot.classList.add('filled');
+        } else {
+          slot.classList.add('blank');
+          slot.textContent = '_';
+        }
+      } else {
+        slot.textContent = letra;
+      }
+      cont.appendChild(slot);
+    });
+  }
+
+  function renderizarLetras() {
+    const grid = document.getElementById('lettersGrid');
+    grid.innerHTML = '';
+    estado.letrasVisibles.forEach(letra => {
+      const btn = document.createElement('button');
+      btn.className = 'letter-btn';
+      btn.textContent = letra;
+      btn.dataset.letra = letra;
+      btn.onclick = () => seleccionar(letra, btn);
+      grid.appendChild(btn);
+    });
+  }
+
+  function bloquearLetras() {
+    document.querySelectorAll('.letter-btn').forEach(b => b.classList.add('disabled'));
+  }
+
+  function habilitarBotonesAccion(mostrarSiguiente, mostrarReintentar) {
+    const nextBtn = document.getElementById('nextBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    nextBtn.style.display = mostrarSiguiente ? 'block' : 'none';
+    retryBtn.style.display = mostrarReintentar ? 'block' : 'none';
+  }
+
+  // ==================== LÓGICA DEL JUEGO ====================
+  function seleccionar(letra, btnEl) {
+    if (estado.terminado) return;
+    initAudio();
+    const faltantes = estado.slotsBlancos;
+    const pal = estado.palabraActual.palabra;
+    let acerto = false;
+    faltantes.forEach(i => {
+      if (pal[i] === letra && !estado.progreso[i]) {
+        estado.progreso[i] = letra;
+        acerto = true;
+      }
+    });
+
+    if (acerto) {
+      btnEl.classList.add('used-correct');
+      playSound('correcto');
+      document.getElementById('feedbackMsg').textContent = '¡Correcto!';
+      document.getElementById('feedbackMsg').className = 'feedback correct';
+      renderizarSlots();
+      if (!estado.slotsBlancos.some(i => !estado.progreso[i])) ganar();
+    } else {
+      btnEl.classList.add('used-wrong');
+      estado.errores++;
+      playSound('error');
+      // animación de sacudida en los slots vacíos
+      estado.slotsBlancos.forEach(i => {
+        if (!estado.progreso[i]) {
+          const slotDiv = document.getElementById('wordSlots').children[i];
+          if (slotDiv) slotDiv.classList.add('shake');
+          setTimeout(() => {
+            if (slotDiv) slotDiv.classList.remove('shake');
+          }, 300);
+        }
+      });
+      renderizarCorazones();
+      const restantes = MAX_ERRORES - estado.errores;
+      const msg = estado.errores >= MAX_ERRORES
+        ? `😢 Sin intentos. La palabra era: ${estado.palabraActual.palabra}`
+        : `❌ Esa letra no está. Te quedan ${restantes} intento${restantes !== 1 ? 's' : ''}.`;
+      document.getElementById('feedbackMsg').textContent = msg;
+      document.getElementById('feedbackMsg').className = 'feedback wrong';
+      if (estado.errores >= MAX_ERRORES) perder();
+    }
+  }
+
+  function ganar() {
+    estado.terminado = true;
+    estado.aciertos++;
+    localStorage.setItem('pm_aciertos', estado.aciertos);
+    document.getElementById('scoreDisplay').textContent = `${estado.aciertos} aciertos`;
+    document.getElementById('feedbackMsg').textContent = '🎉 ¡Muy bien! Completaste la palabra 🎉';
+    document.getElementById('feedbackMsg').className = 'feedback win';
+    bloquearLetras();
+    habilitarBotonesAccion(true, false);
+    playSound('ganaste');
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    lanzarConfetti();
+    celebrarVictoria();
+    // Actualizar progreso
+    const pct = ((estado.indice + 1) / PALABRAS.length) * 100;
+    document.getElementById('progressFill').style.width = `${pct}%`;
+  }
+
+  function perder() {
+    estado.terminado = true;
+    bloquearLetras();
+    // Revelar las letras faltantes en rojo
+    estado.slotsBlancos.forEach(i => {
+      if (!estado.progreso[i]) {
+        const slotDiv = document.getElementById('wordSlots').children[i];
+        if (slotDiv) {
+          slotDiv.textContent = estado.palabraActual.palabra[i];
+          slotDiv.classList.remove('blank');
+          slotDiv.classList.add('reveal-wrong');
+        }
+      }
+    });
+    habilitarBotonesAccion(false, true);
+  }
+
+  function cargarPalabra() {
+    const obj = PALABRAS[estado.orden[estado.indice]];
+    estado.palabraActual = obj;
+    estado.slotsBlancos = elegirLetrasFaltantes(obj.palabra);
+    estado.progreso = new Array(obj.palabra.length).fill(null);
+    estado.errores = 0;
+    estado.terminado = false;
+    estado.letrasVisibles = generarLetrasVisibles(obj.palabra, estado.slotsBlancos);
+
+    const pct = (estado.indice / PALABRAS.length) * 100;
+    document.getElementById('progressFill').style.width = `${pct}%`;
+    document.getElementById('wordEmoji').textContent = obj.emoji;
+    document.getElementById('hintText').textContent = obj.pista;
+    document.getElementById('feedbackMsg').textContent = '';
+    document.getElementById('feedbackMsg').className = 'feedback';
+    habilitarBotonesAccion(false, false);
+    renderizarCorazones();
+    renderizarSlots();
+    renderizarLetras();
+  }
+
+  function siguientePalabra() {
+    if (!estado.terminado) return;
+    estado.indice = (estado.indice + 1) % PALABRAS.length;
+    if (estado.indice === 0) {
+      estado.orden = mezclar(Array.from({ length: PALABRAS.length }, (_, i) => i));
+    }
+    cargarPalabra();
+  }
+
+  function reintentarPalabra() {
+    // Reinicia la misma palabra con los mismos datos originales
+    estado.progreso = new Array(estado.palabraActual.palabra.length).fill(null);
+    estado.errores = 0;
+    estado.terminado = false;
+    estado.letrasVisibles = generarLetrasVisibles(estado.palabraActual.palabra, estado.slotsBlancos);
+    document.getElementById('feedbackMsg').textContent = '';
+    document.getElementById('feedbackMsg').className = 'feedback';
+    habilitarBotonesAccion(false, false);
+    renderizarCorazones();
+    renderizarSlots();
+    renderizarLetras();
+  }
+
+  function reiniciarGlobal() {
+    estado.aciertos = 0;
+    localStorage.setItem('pm_aciertos', 0);
+    document.getElementById('scoreDisplay').textContent = '0 aciertos';
+    estado.orden = mezclar(Array.from({ length: PALABRAS.length }, (_, i) => i));
+    estado.indice = 0;
+    cargarPalabra();
+  }
+
+  // ==================== EVENTOS E INICIO ====================
+  document.getElementById('nextBtn').onclick = siguientePalabra;
+  document.getElementById('retryBtn').onclick = reintentarPalabra;
+  document.getElementById('resetBtn').onclick = reiniciarGlobal;
+  document.getElementById('soundBtn').onclick = () => {
+    estado.sonido = !estado.sonido;
+    document.getElementById('soundBtn').textContent = estado.sonido ? '🔊 Sonido' : '🔇 Silencio';
+    if (estado.sonido && estado.audioCtx && estado.audioCtx.state === 'suspended') initAudio();
+  };
+
+  // Soporte teclado
+  document.addEventListener('keydown', e => {
+    const letra = e.key.toUpperCase();
+    if (!/^[A-Z]$/.test(letra) || estado.terminado) return;
+    const btn = [...document.querySelectorAll('.letter-btn')].find(b =>
+      b.dataset.letra === letra && !b.classList.contains('used-correct') && !b.classList.contains('used-wrong')
+    );
+    if (btn) seleccionar(letra, btn);
+  });
+
+  // Inicializar
+  function iniciar() {
+    const guardado = localStorage.getItem('pm_aciertos');
+    if (guardado) estado.aciertos = parseInt(guardado);
+    document.getElementById('scoreDisplay').textContent = `${estado.aciertos} aciertos`;
+    estado.orden = mezclar(Array.from({ length: PALABRAS.length }, (_, i) => i));
+    // Activar audio al primer toque/clic (requerido por navegadores)
+    document.body.addEventListener('click', () => initAudio(), { once: true });
+    cargarPalabra();
+  }
+  iniciar();
+</script>
+</body>
+</html>
